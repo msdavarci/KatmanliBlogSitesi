@@ -1,16 +1,25 @@
 ﻿using KatmanliBlogSitesi.Data;
 using KatmanliBlogSitesi.Entites;
+using KatmanliBlogSitesi.Service.Abstract;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KatmanliBlogSitesi.Areas.Admin.Controllers
 {
 
-    [Area("Admin")]
+    [Area("Admin"), Authorize]
     public class UsersController : Controller
     {
-        DatabaseContext context = new DatabaseContext(); // veritabanındaki users tablosuna ulaşmak için DatabaseContext sınıfından context isminde bir nesne oluşturduk.
-        // GET: UsersController
-        public ActionResult Index()
+        DatabaseContext context = new DatabaseContext();
+        private readonly IService<User> _service; // veritabanındaki users tablosuna ulaşmak için DatabaseContext sınıfından context isminde bir nesne oluşturduk.
+
+		public UsersController(IService<User> service)
+		{
+			_service = service;
+		}
+
+		// GET: UsersController
+		public ActionResult Index()
         {
             var kullaniciListesi = context.Users.ToList(); // context nesnesi üzerinden users tablosuna ulaşıp veritabanındaki kayıtları çektik.
 
