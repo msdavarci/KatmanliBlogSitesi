@@ -33,9 +33,24 @@ namespace KatmanliBlogSitesi.Areas.Admin.Controllers
         }
 
         // GET: UsersController/Create
-        public ActionResult Create()
+        public async Task<ActionResult> CreateAsync(User user)
         {
-            return View();
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    await _service.AddAsync(user);
+                    await _service.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+
+                }
+                catch
+                {
+                    ModelState.AddModelError("", "Hata Oluştu!");
+                }
+            }
+            
+            return View(user);
         }
 
         // POST: UsersController/Create
@@ -66,26 +81,31 @@ namespace KatmanliBlogSitesi.Areas.Admin.Controllers
         // POST: UsersController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, User user)
+        public async Task<ActionResult> EditAsync(int id, User user)
         {
-            try
+            if (ModelState.IsValid)
             {
-                context.Users.Update(user);
-                context.SaveChanges();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    _service.Update(user);
+                    await _service.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+
+                }
+                catch
+                {
+                    ModelState.AddModelError("", "Hata Oluştu!");
+                }
             }
-            catch
-            {
-                ModelState.AddModelError("", "Hata Oluştu!");
-            }
+
             return View(user);
         }
 
         // GET: UsersController/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> DeleteAsync(int id)
         {
-            var user = context.Users.Find(id);
-            return View(user);
+            var model = await _service.FindAsync(id);
+            return View(model);
         }
 
         // POST: UsersController/Delete/5
@@ -95,8 +115,8 @@ namespace KatmanliBlogSitesi.Areas.Admin.Controllers
         {
             try
             {
-                context.Users.Remove(user);
-                context.SaveChanges();
+                _service.Delete(user);
+               _service.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
             catch

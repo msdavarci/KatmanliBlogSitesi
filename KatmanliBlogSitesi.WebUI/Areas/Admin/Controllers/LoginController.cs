@@ -11,11 +11,11 @@ namespace KatmanliBlogSitesi.WebUI.Areas.Admin.Controllers
 	[Area("Admin")]
 	public class LoginController : Controller
 	{
-		private readonly IService<User> _service;
+		private readonly IService<User> _userService;
 
 		public LoginController(IService<User> service)
 		{
-			_service = service;
+            _userService = service;
 		}
 
 		public IActionResult Index()
@@ -23,31 +23,40 @@ namespace KatmanliBlogSitesi.WebUI.Areas.Admin.Controllers
 			return View();
 		}
 		[HttpPost]
-		public async Task<IActionResult> Index(string email, string password)
+		public async Task<IActionResult> Index(LoginViewModel loginViewModel)
 		{
-			try
+			if(ModelState.IsValid)
 			{
-				var kullanici = await _service.FirstForDefaultAsync(k => k.IsActive && k.Email == email && k.Password == password);
-				if (kullanici != null)
-				{
-					var kullaniciHaklari = new List<Claim>()
-					{
-						new Claim(ClaimTypes.Name, kullanici.Name),
-						new Claim("Role", kullanici.IsAdmin ?"Admin":"User"),
-						new Claim("UserId", kullanici.Id.ToString())
 
-					};
-					var kullaniciKimligi = new ClaimsIdentity(kullaniciHaklari, CookieAuthenticationDefaults.AuthenticationScheme);
-					ClaimsPrincipal principal = new(kullaniciKimligi);
-					await HttpContext.SignInAsync(principal);
-					return Redirect("/Admin/Main/");
+				try
+				{
+					var account = await _userService.FirstForDefaultAsync(x => x.IsActive && x.Email == loginViewModel.Email && x.Password == loginViewModel.Password);
+					if(account == null)
+					{
+						ModelState.AddModelError("", "Giriş Başarısız!");
+					}
+					else
+					{
+						var claims = new List<Claim>()
+						{
+							new Claim(ClaimTypes.Name, account.Name),
+							new Claim("Role", account.IsAdmin ? "Admin" : "User") // eğer giriş yapan kullanıcı adminse ona admin rolünü ver değilse düz kullanıcı(user) rolünü ver
+                        };
+						var userIdentity = new ClaimsIdentity(claims, "Login");
+						ClaimsPrincipal principal = new ClaimsPrincipal(userIdentity);
+						await HttpContext.SignInAsync(principal);
+						return Redirect("/Admin/");
+
+					}
+
 				}
-				else TempData["Mesaj"] = "Giriş Başarısız!";
+				catch (Exception)
+				{
+					TempData["Mesaj"] = "Hata Oluştu!";
+				}
+
 			}
-			catch (Exception)
-			{
-				TempData["Mesaj"] = "Hata Oluştu!";
-			}
+			
 			return View();
 		}
 	}
